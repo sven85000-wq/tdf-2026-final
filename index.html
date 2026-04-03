@@ -2,25 +2,30 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Tour de France 2026 - Carte Officielle</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tour de France 2026 - Détail des Étapes</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { margin: 0; padding: 0; }
-        #map { height: 100vh; width: 100%; background: #d4dadc; }
-        /* Bandeau style ArcGIS */
+        body { margin: 0; padding: 0; font-family: 'Arial', sans-serif; }
+        #map { height: 100vh; width: 100%; background: #f8f9fa; }
         .header {
             position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
-            z-index: 1000; background: white; padding: 10px 25px;
-            border-top: 4px solid #ff0000; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            font-family: Arial, sans-serif; text-align: center;
+            z-index: 1000; background: white; padding: 10px 20px;
+            border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            text-align: center; border-bottom: 3px solid #ff0000;
         }
+        h1 { margin: 0; font-size: 18px; }
+        .popup-box { font-size: 14px; line-height: 1.5; }
+        .popup-box b { color: #d63031; font-size: 16px; }
     </style>
 </head>
 <body>
+
     <div class="header">
-        <strong style="text-transform: uppercase; letter-spacing: 1px;">Tour de France 2026</strong>
-        <div style="font-size: 11px; color: #666;">Parcours Officiel - Intégral</div>
+        <h1>TOUR DE FRANCE 2026</h1>
+        <small>Cliquez sur une étape pour les détails</small>
     </div>
+
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -29,26 +34,45 @@
     <script>
         var map = L.map('map').setView([46.5, 2.5], 6);
 
-        // Fond de carte style ArcGIS Canvas (Gris clair)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; CARTO'
         }).addTo(map);
 
-        // Chargement du fichier complet
-        var gpx = 'tour-de-france-2026.gpx'; 
+        // MODIFIE ICI SI TON FICHIER A UN AUTRE NOM
+        var fileGPX = 'tour-de-france-2026.gpx';
 
-        new L.GPX(gpx, {
+        new L.GPX(fileGPX, {
             async: true,
             marker_options: { startIconUrl: null, endIconUrl: null, shadowUrl: null },
-            polyline_options: {
-                color: '#ff0000',
-                weight: 4,
-                opacity: 0.9
-            }
+            polyline_options: { color: '#ff0000', weight: 4, opacity: 0.7 }
         }).on('loaded', function(e) {
             map.fitBounds(e.target.getBounds());
+           
+            // On parcourt chaque "couche" (chaque étape) du fichier
+            e.target.eachLayer(function(layer) {
+                // On récupère le nom de l'étape écrit dans le GPX
+                var name = layer.feature ? layer.feature.properties.name : "Étape du Tour";
+                var dist = (layer.get_distance() / 1000).toFixed(1);
+
+                // On crée la bulle d'info pour CE segment précis
+                layer.bindPopup(`
+                    <div class="popup-box">
+                        <b>${name}</b><br>
+                        📏 Distance : ${dist} km<br>
+                        🚴‍♂️ <i>Détail du parcours 2026</i>
+                    </div>
+                `);
+
+                // Effet au survol du segment spécifique
+                layer.on('mouseover', function() {
+                    this.setStyle({ color: '#00b894', weight: 8, opacity: 1 });
+                    this.bringToFront(); // Met le tracé survolé au-dessus des autres
+                });
+                layer.on('mouseout', function() {
+                    this.setStyle({ color: '#ff0000', weight: 4, opacity: 0.7 });
+                });
+            });
         }).addTo(map);
     </script>
 </body>
 </html>
-
